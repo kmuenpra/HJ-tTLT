@@ -1,0 +1,75 @@
+# ── Formula ───────────────────────────────────────────────────────────────────
+#
+#   (mu_1 AND NOT(mu_2))  U[0,12]  G[0,8](mu_3)
+#
+# Predicates
+# ----------
+#   mu_1 : large rectangle  x in [-4,4], y in [-4,4]
+#          (positive inside, ignores theta — no x[2] in expression)
+#          region: target
+#
+#   mu_2 : small circle centred at (-1, -1), radius 1.2
+#          (positive inside, ignores theta)
+#          region: target  -->  NOT(mu_2) flips to "obstacle" in solve_negation
+#
+#   mu_3 : circle centred at (3, 3), radius 1.0
+#          slight overlap with rectangle corner at (4,4)
+#          (positive inside, ignores theta)
+#          region: target
+#
+# Interpretation
+# --------------
+#   Stay inside the rectangle (mu_1) while avoiding the inner circle (NOT mu_2),
+#   until at some time in [0,12] the car reaches mu_3 AND stays there for 8s.
+#
+# ─────────────────────────────────────────────────────────────────────────────
+
+type: U
+interval: [0, 8]
+
+phi:
+  type: AND
+  left:
+    type: predicate
+    expression: "min(x[0] - (-4.0), min(4.0 - x[0], min(x[1] - (-4.0), 4.0 - x[1])))"
+    # SDF of rectangle [-4,4]x[-4,4]:
+    #   = min distance to all four walls, positive strictly inside, negative outside
+    # No x[2] term --> ignore_dims = [2]  (theta ignored automatically)
+    hj:
+      region: target
+
+  right:
+    type: NOT
+    child:
+      type: predicate
+      expression: "1.2 - ((x[0] - (-1.0))**2 + (x[1] - (-1.0))**2)**0.5"
+      # Circle at (-1,-1) radius 1.2 — positive inside
+      # NOT flips region: target --> obstacle
+      hj:
+        region: target
+
+psi:
+  type: AND
+  left:
+    type: F
+    interval: [0, 5]
+    child:
+      type: G
+      interval: [0,5]
+      child:
+        type: predicate
+        expression: "1.0 - ((x[0] - 3.0)**2 + (x[1] - 3.0)**2)**0.5"
+        # Circle at (3,3) radius 1.0 — overlaps rectangle corner
+        # positive inside
+        hj:
+          region: target
+
+  right:
+    type: NOT
+    child:
+      type: predicate
+      expression: "1.2 - ((x[0] - (-1.0))**2 + (x[1] - (-1.0))**2)**0.5"
+      # Circle at (-1,-1) radius 1.2 — positive inside
+      # NOT flips region: target --> obstacle
+      hj:
+        region: target

@@ -1,0 +1,47 @@
+# Formula: F[5,10](G[0,10] mu_1) AND (mu_2 U[0,8] mu_3)
+#
+# Predicates:
+#   mu_1 : ||x_0||           <= 1  --> circle centred at (0,0), radius 1
+#   mu_2 : ||x_0 - [4,4]||  <= 5  --> circle centred at (4,4), radius 5
+#   mu_3 : ||x_0 - [3,5]||  <= 1  --> circle centred at (3,5), radius 1
+#
+# Each predicate carries two independent sections:
+#   expression : used by STL robustness evaluation  (stl_robustness.py)
+#   hj.region  : used by tLTL for HJ shape conversion (stl_hj.py)
+#                "target"   --> target_set  (reach)
+#                "obstacle" --> obstacle_set (avoid)
+
+  type: AND
+  left:
+    type: F
+    interval: [5, 15]
+    child:
+      type: G
+      interval: [0, 5]
+      child:
+        type: predicate
+        expression: "1.0 - ((x[0] + 1.0)**2 + x[1]**2)**0.5"              # ||x|| <= 1
+        c_x: -1.0
+        c_y: 0.0
+        r:   1.0
+        hj:
+          region: target    # --> target_set (reach)
+  right:
+    type: U
+    interval: [0, 8] #[0, 8]
+    phi:
+      type: predicate
+      expression: "8.0 - ((x[0]-4.0)**2 + (x[1]-4.0)**2)**0.5"   # ||x-[4,4]|| <= 5
+      c_x: 4.0
+      c_y: 4.0
+      r:   8.0
+      hj:
+        region: target    # --> target_set (reach)
+    psi:
+      type: predicate
+      expression: "1.0 - ((x[0]-3.0)**2 + (x[1]-5.0)**2)**0.5"   # ||x-[3,5]|| <= 1
+      c_x: 3.0
+      c_y: 5.0
+      r:   1.0
+      hj:
+        region: target    # --> target_set (reach)

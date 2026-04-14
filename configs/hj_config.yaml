@@ -1,0 +1,30 @@
+# ── Grid ──────────────────────────────────────────────────────────────────────
+# 2D state space: [x, y]
+# Plane2D has x = [0, 0] by default, so state dim = 2
+
+grid:
+  dims:          2
+  min_bounds:    [-10.0, -10.0]
+  max_bounds:    [ 10.0,  10.0]
+  pts_each_dim:  [80,   80  ]
+  periodic_dims: []             # no periodic dimensions
+
+
+# ── Dynamics ──────────────────────────────────────────────────────────────────
+# Plane2D: x_dot = vx + d,  y_dot = vy + d
+#   vx in [vxMin, vxMax]  — x control velocity
+#   vy in [vyMin, vyMax]  — y control velocity
+#   d  in [dMin,  dMax]   — disturbance bound
+
+dynamics:
+  class: Plane2D
+  params:
+    x:     [0.5, 0.8]    # initial state placeholder (sets state dimension = 2)
+    vxMin: -1.0      # minimum x control velocity
+    vxMax:  1.0      # maximum x control velocity
+    vyMin: -1.0      # minimum y control velocity
+    vyMax:  1.0      # maximum y control velocity
+    dMin:  -0.1      # disturbance lower bound
+    dMax:   0.1      # disturbance upper bound
+    uMode: "min"     # "min": controller minimises value (BRS semantics)
+    dMode: "max"     # "max": disturbance maximises value (adversarial)

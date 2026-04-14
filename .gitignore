@@ -1,0 +1,5 @@
+# Model checkpoints and weights
+training_HJFNO/model/
+
+# Generated figures
+HJR_FNO/figures/

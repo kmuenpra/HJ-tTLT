@@ -1,0 +1,18 @@
+type: G
+interval: [0, 10]
+child:
+  type: F
+  interval: [0, 5]
+  child:
+    type: NOT
+    child:
+      type: AND
+      left:
+        type: predicate
+        expression: "x[0] - 1.0"   # x[0] > 1.0
+      right:
+        type: predicate
+        expression: "2.5 - x[0]"   # x[0] < 2.5
+
+
+#G[0,10] F[0,5] NOT (x[0] >= 1.0 ∧ x[0] <=  2.5)

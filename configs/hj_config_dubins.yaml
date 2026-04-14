@@ -1,0 +1,28 @@
+# ── Grid ──────────────────────────────────────────────────────────────────────
+# 3D state space: [x, y, theta]
+# x, y   in [-5, 5]
+# theta  in [0, 2*pi]  — periodic dimension (index 2)
+
+grid:
+  dims:          3
+  min_bounds:    [-5.0, -5.0,  0.0      ]
+  max_bounds:    [ 5.0,  5.0,  6.2831853]   # 2*pi
+  pts_each_dim:  [40,   40,   20        ]
+  periodic_dims: [2]                         # theta is periodic
+
+
+# ── Dynamics ──────────────────────────────────────────────────────────────────
+# DubinsCar2: variable forward speed + yaw-rate control
+#   x_dot     = speed * cos(theta),   speed in [speedMin, speedMax]
+#   y_dot     = speed * sin(theta)
+#   theta_dot = omega,                omega in [wMin, wMax]
+
+dynamics:
+  class: DubinsCar2
+  params:
+    x:        [0.0, 0.0, 0.0]   # placeholder — sets state dim = 3
+    uMin:     [0.0, -0.6]      # [speedMin, wMin] — min speed and yaw rate (m/s, rad/s)
+    uMax:     [1.0,   0.6]      # [speedMax, wMax] — max speed and yaw rate (m/s, rad/s)
+    dMax:     [0.1, 0.1, 0.1]   
+    uMode:    "min"             # BRS: controller minimises value
+    dMode:    "max"
