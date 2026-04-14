@@ -1,0 +1,59 @@
+# Formula: F[0,T1](mu_explore) AND (mu_safe U[0,T] G[0,T2] mu_goal)
+#
+# Predicates:
+#   mu_explore : ||x - (-5,-2)||  <= 1  --> circle centred at (-5,-2), radius 1
+#   mu_goal    : ||x - ( 6, 4)||  <= 1  --> circle centred at ( 6, 4), radius 1
+#   mu_safe    : x in [-8,9] x [-5,7]  --> rectangle containing both circles
+#
+# Time parameters:
+#   T1 =  8  (horizon for F — eventually explore)
+#   T  = 10  (horizon for U — stay safe until goal)
+#   T2 =  5  (horizon for G — remain in goal)
+#
+# STL horizon = max(T1, T + T2) = max(8, 15) = 15
+#
+# Interpretation:
+#   The robot must eventually reach the exploration region within T1,
+#   while remaining inside the safe rectangle until it reaches the goal
+#   region, after which it must stay in the goal for at least T2.
+#
+# Each predicate carries two independent sections:
+#   expression : used by STL robustness evaluation  (stl_robustness.py)
+#   hj.region  : used by tTLT for HJ shape conversion (stl_hj.py)
+#                "target"   --> target_set  (reach / stay)
+#                "obstacle" --> obstacle_set (avoid)
+
+  type: AND
+  left:
+    type: F
+    interval: [0, 8]
+    child:
+      type: predicate
+      expression: "1.0 - ((x[0] + 5.0)**2 + (x[1] + 2.0)**2)**0.5"   # ||x - (-5,-2)|| <= 1
+      c_x: -5.0
+      c_y: -2.0
+      r:    1.0
+      hj:
+        region: target
+  right:
+    type: U
+    interval: [0, 20]
+    phi:
+      type: predicate
+      expression: "min(x[0] + 8.0, 9.0 - x[0], x[1] + 5.0, 7.0 - x[1])"   # x in [-8,9] x [-5,7]
+      c_x:  0.5
+      c_y:  1.0
+      r:    null
+      hj:
+        region: target
+    psi:
+      type: G
+      interval: [0, 5]
+      child:
+        type: predicate
+        expression: "1.0 - ((x[0] - 6.0)**2 + (x[1] - 4.0)**2)**0.5"   # ||x - (6,4)|| <= 1
+        c_x:  6.0
+        c_y:  4.0
+        r:    1.0
+        hj:
+          region: target

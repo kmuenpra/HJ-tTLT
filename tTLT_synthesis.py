@@ -1051,9 +1051,9 @@ def postSet(B_xt:list[TubeNode], t:float, root: TubeNode):
 
             PostSet.append(S_i) #TODO This is inside if-statement in the paper
 
-            PreNode = Pre(S_i)
+            # PreNode = Pre(S_i)
             PostNode = Post(S_i)
-            if PreNode is not None and (t >= (S_i.ta + op.a)):
+            if (t >= (S_i.ta + op.a)): # and PreNode is not None 
 
                 if PostNode:
                     for node in PostNode:
@@ -1064,9 +1064,9 @@ def postSet(B_xt:list[TubeNode], t:float, root: TubeNode):
 
             PostSet.append(S_i) #TODO This is inside if-statement in the paper
 
-            PreNode = Pre(S_i)
+            # PreNode = Pre(S_i)
             PostNode = Post(S_i)
-            if PreNode is not None and (t >= (S_i.ta + op.b)):
+            if (t >= (S_i.ta + op.b)): #and PreNode is not None 
 
                 if PostNode:
                     for node in PostNode:

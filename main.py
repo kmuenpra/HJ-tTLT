@@ -47,6 +47,7 @@ from tTLT_nodes import (
     EventuallyOperatorNode,
     UntilOperatorNode,
     plot_ttlt_tree,
+    _ttlt_collect_layout,
     Post,
     Pre,
     Children,
@@ -266,6 +267,45 @@ def lidar_detect(
     return detected
 
 
+def _draw_ttlt_tree(ax_t, active_labels: set):
+        ax_t.clear()
+        positions, labels, kinds, edges, _ = _ttlt_collect_layout(solver.root)
+
+        # ── bounding box + adaptive sizing ───────────────────────────────────
+        all_x = [p[0] for p in positions.values()]
+        all_y = [p[1] for p in positions.values()]
+        x_rng = max(all_x) - min(all_x) or 1.0
+        y_rng = max(all_y) - min(all_y) or 1.0
+        x_pad = max(1.5, x_rng * 0.12)
+        y_pad = max(1.5, y_rng * 0.12)          # extra top/bottom room
+        n     = len(positions)
+        s     = max(750, min(900, 5000 // n))   # node marker area
+        fst   = max(10,   min(9,   70   // n))   # tube font size
+        fso   = max(6,   min(7,   60   // n))   # operator font size
+
+        # ── edges ─────────────────────────────────────────────────────────────
+        for src_id, dst_id in edges:
+            x0, y0 = positions[src_id]; x1, y1 = positions[dst_id]
+            ax_t.plot([x0, x1], [y0, y1], color="#888888", lw=1.0, zorder=1)
+
+        # ── nodes ─────────────────────────────────────────────────────────────
+        for nid, k in kinds.items():
+            px, py = positions[nid]; lbl = labels[nid]
+            if k == "tube":
+                fc = "orange" if lbl in active_labels else "#E8E8E8"
+                ax_t.scatter(px, py, s=s, c=fc, edgecolors="#555555", lw=1.2, zorder=2, marker="o")
+                ax_t.text(px, py, lbl, ha="center", va="center", fontsize=fst, fontweight="bold", zorder=3)
+            else:
+                ax_t.scatter(px, py, s=s, c="#C8D8F0", edgecolors="#335599", lw=1.2, zorder=2, marker="D")
+                ax_t.text(px, py, lbl, ha="center", va="center", fontsize=fso, color="#223366", zorder=3)
+
+        ax_t.set_xlim(min(all_x) - x_pad, max(all_x) + x_pad)
+        ax_t.set_ylim(min(all_y) - y_pad, max(all_y) + y_pad)
+        ax_t.axis("off")
+        ax_t.set_title("tTLT Tree  (orange = active B(x,t))", fontsize=9)
+        plt.tight_layout()
+
+
 # ==============================================================================
 # Main
 # ==============================================================================
@@ -286,14 +326,19 @@ if __name__ == "__main__":
     # ── Step 1: Build tTLT and solve all reachable sets ───────────────────────
 
     # Plane2D  :  F[5,10](G[0,10] mu_1)  AND  (mu_2 U[0,8] mu_3)
+    stl_yaml_path  = "configs/stl_spec_hj_3.yaml"
+    hj_config_path = "configs/hj_config.yaml"
+
     result = tTLT(
-        stl_yaml_path  = "configs/stl_spec_hj.yaml",
-        hj_config_path = "configs/hj_config.yaml",
+        stl_yaml_path  = stl_yaml_path,
+        hj_config_path = hj_config_path,
     )
-    solver = HJtTLT(result, "configs/hj_config.yaml")
+    solver = HJtTLT(result, hj_config_path)
     solver.FNO_enable = False
     solver.solve_all(dt=dt, accuracy="medium", plot=False, verbose=False)
-    stl_horizon  = STLHorizonEvaluator("configs/stl_spec_hj.yaml").evaluate()
+    stl_horizon  = STLHorizonEvaluator(stl_yaml_path).evaluate()
+
+    print(stl_horizon)
     predicates   = collect_predicates(solver.formula, solver.root)
 
     # # DubinsCar  :  (mu_1 AND NOT mu_2) U[0,12] G[0,8](mu_3)
@@ -315,7 +360,7 @@ if __name__ == "__main__":
     save_gif   = True
 
     # ── Step 4: Plot setup ────────────────────────────────────────────────────
-    fig, ax       = plt.subplots(figsize=(7, 6))
+    fig, (ax, ax_tree) = plt.subplots(1, 2, figsize=(16, 7))
     state_history = [tuple(x)]
     plt.ion()
 
@@ -396,6 +441,7 @@ if __name__ == "__main__":
     ax.yaxis.set_minor_locator(ticker.AutoMinorLocator())
     ax.grid(True, which="major", linestyle="--", alpha=0.4)
     ax.legend(loc="upper right", fontsize=8)
+    _draw_ttlt_tree(ax_tree, active_labels=set())
 
     buf = io.BytesIO()
     plt.savefig(buf, format="png", dpi=100, bbox_inches="tight")
@@ -408,7 +454,7 @@ if __name__ == "__main__":
 
     # ── Step 5: Online control synthesis ──────────────────────────────────────
     # tk_array = np.arange(0, stl_horizon + 1e-8, dt)
-    tk_array = np.arange(0, stl_horizon + 2, dt)
+    tk_array = np.arange(0, stl_horizon, dt)
 
     # Algorithm 6 — Initialization
     PostSet = Initialization(solver.root, tk_arr=tk_array, t0=t)
@@ -609,6 +655,7 @@ if __name__ == "__main__":
         ax.yaxis.set_minor_locator(ticker.AutoMinorLocator())
         ax.grid(True, which="major", linestyle="--", alpha=0.4)
         ax.legend(loc="upper right", fontsize=8)
+        _draw_ttlt_tree(ax_tree, active_labels={S_t.label for S_t in B_xt if S_t.label})
 
         buf = io.BytesIO()
         plt.savefig(buf, format="png", dpi=100, bbox_inches="tight")
@@ -616,7 +663,7 @@ if __name__ == "__main__":
         gif_frames.append(Image.open(buf).copy())
         buf.close()
 
-        plt.pause(1)
+        plt.pause(0.01)
 
     # ── Post-loop ─────────────────────────────────────────────────────────────
     plt.ioff()

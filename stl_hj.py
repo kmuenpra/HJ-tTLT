@@ -860,7 +860,7 @@ class HJtTLT:
             raise ValueError(f"solve_globally: expected Globally, got {type(node).__name__}.")
 
         a, b    = node.a, node.b
-        horizon = b - a #NOTE choose reachable set horizon to be [0,b]
+        horizon = b #NOTE choose reachable set horizon to be [0,b]
         tau     = np.arange(0, horizon + 1e-8, dt)
 
         child_results: dict = {}
@@ -957,7 +957,7 @@ class HJtTLT:
             raise ValueError(f"solve_eventually: expected Eventually, got {type(node).__name__}.")
 
         a, b    = node.a, node.b
-        horizon = b - a #NOTE choose reachable set horizon to be [0,b]
+        horizon = b #NOTE choose reachable set horizon to be [0,b]
         tau     = np.arange(0, horizon + 1e-8, dt)
 
         child_results: dict = {}
@@ -1174,7 +1174,7 @@ class HJtTLT:
         psi.c_x = psi_center[0]
         psi.c_y = psi_center[1]
 
-        horizon = op.b - op.a #NOTE choose reachable set horizon to be [0,b]
+        horizon = op.b #NOTE choose reachable set horizon to be [0,b]
         tau     = np.arange(0, horizon + 1e-8, dt)
 
 
@@ -1310,7 +1310,7 @@ class HJtTLT:
             raise ValueError(f"solve_until: expected Until, got {type(node).__name__}.")
 
         a, b    = node.a, node.b
-        horizon = b - a #NOTE choose reachable set horizon to be [0,b]
+        horizon = b #NOTE choose reachable set horizon to be [0,b]
         tau     = np.arange(0, horizon + 1e-8, dt)
 
         comp_methods = {
@@ -1339,9 +1339,6 @@ class HJtTLT:
 
         end_leaves = self._collect_end_leaves(phi_tube)
         
-        #Origin centered Phi SDF (compatible with FNO)
-        sdf_phi_translated = self.translated_predicate_sdf_until(node.phi, node.psi, self.grid)
-
 
         psi_sdf_root = self._resolve_node_to_sdf(node.psi, dt, accuracy, plot, matplot, child_results)
 
@@ -1362,6 +1359,9 @@ class HJtTLT:
 
 
             if self.FNO_enable:
+
+                #Origin centered Phi SDF (compatible with FNO)
+                sdf_phi_translated = self.translated_predicate_sdf_until(node.phi, node.psi, self.grid)
 
                 # ---- FNO prediction -------------------------------------------------
                 _, FNO_pred = HJR_FNO2d_SuperResQuery(

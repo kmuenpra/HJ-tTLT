@@ -1,0 +1,97 @@
+# Formula:
+#   (F[0,10](G[0,2] mu_explore) AND (mu_safe U[0,25] G[0,2] mu_relay))
+#   AND (mu_safe U[0,25] G[0,2] mu_goal)
+#
+# Equivalently:
+#   F[0,10] G[0,2] mu_explore
+#   AND  mu_safe U[0,25] G[0,2] mu_relay
+#   AND  mu_safe U[0,25] G[0,2] mu_goal
+#
+# Predicates:
+#   mu_explore : ||x - (-6,-6)|| <= 1  --> circle centred at (-6,-6), radius 1
+#   mu_relay   : ||x - ( 2, 2)|| <= 1  --> circle centred at ( 2, 2), radius 1
+#   mu_goal    : ||x - ( 7, 5)|| <= 1  --> circle centred at ( 7, 5), radius 1
+#   mu_safe    : x in [-9,9] x [-9,9]  --> rectangle (all circles strictly inside)
+#
+# Time parameters:
+#   F  interval : [0, 10]   (eventually explore)
+#   G  interval : [0,  2]   (dwell time in explore / relay / goal)
+#   U  interval : [0, 25]   (stay safe until relay / goal)
+#
+# STL horizon = max(10+2, 25+2) = 27
+#
+# Interpretation:
+#   The robot must eventually reach and dwell in the exploration region.
+#   Independently, while remaining inside the safe rectangle, it must reach
+#   and dwell in the relay region AND the goal region (both objectives must
+#   be satisfied; any ordering is permitted).
+#
+# Domain: Omega = [-10,10] x [-10,10]
+#
+# Each predicate carries two independent sections:
+#   expression : used by STL robustness evaluation  (stl_robustness.py)
+#   hj.region  : used by tTLT for HJ shape conversion (stl_hj.py)
+#                "target"   --> target_set  (reach / stay)
+#                "obstacle" --> obstacle_set (avoid)
+
+  type: AND                          # outer AND
+  left:
+    type: AND                        # inner AND
+    left:
+      type: F
+      interval: [0, 10]
+      child:
+        type: G
+        interval: [0, 2]
+        child:
+          type: predicate
+          expression: "1.0 - ((x[0] + 6.0)**2 + (x[1] + 6.0)**2)**0.5"   # ||x - (-6,-6)|| <= 1
+          c_x: -6.0
+          c_y: -6.0
+          r:    1.0
+          hj:
+            region: target
+    right:
+      type: U
+      interval: [0, 18]
+      phi:
+        type: predicate
+        expression: "min(x[0] + 9.0, 9.0 - x[0], x[1] + 9.0, 9.0 - x[1])"   # x in [-9,9] x [-9,9]
+        c_x:  0.0
+        c_y:  0.0
+        r:    null
+        hj:
+          region: target
+      psi:
+        type: G
+        interval: [0, 2]
+        child:
+          type: predicate
+          expression: "1.0 - ((x[0] - 2.0)**2 + (x[1] - 2.0)**2)**0.5"   # ||x - (2,2)|| <= 1
+          c_x:  2.0
+          c_y:  2.0
+          r:    1.0
+          hj:
+            region: target
+  right:
+    type: U
+    interval: [0, 25]
+    phi:
+      type: predicate
+      expression: "min(x[0] + 9.0, 9.0 - x[0], x[1] + 9.0, 9.0 - x[1])"   # x in [-9,9] x [-9,9]
+      c_x:  0.0
+      c_y:  0.0
+      r:    null
+      hj:
+        region: target
+    psi:
+      type: G
+      interval: [0, 2]
+      child:
+        type: predicate
+        expression: "1.0 - ((x[0] - 7.0)**2 + (x[1] - 5.0)**2)**0.5"   # ||x - (7,5)|| <= 1
+        c_x:  7.0
+        c_y:  5.0
+        r:    1.0
+        hj:
+          region: target
