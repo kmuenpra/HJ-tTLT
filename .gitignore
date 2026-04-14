@@ -3,3 +3,7 @@ training_HJFNO/model/
 
 # Generated figures
 HJR_FNO/figures/
+
+# Claude Code metadata
+.claude/
+.project_context/
